@@ -32,10 +32,10 @@ def google_paydate(date_entry):
     sample_date = datetime.date(year , month , day)
     sample_date = datetime.date(sample_date.year, sample_date.month,
                                     calendar.monthrange(sample_date.year , sample_date.month)[ -1 ])
-    google_start_date = datetime.date (sample_date.year , sample_date.month , 1)
-    _ , num_days = calendar.monthrange (sample_date.year , sample_date.month)
-    google_end_date = datetime.date (sample_date.year , sample_date.month , num_days)
-    return sample_date + datetime.timedelta(days=1)
+    #google_start_date = datetime.date (sample_date.year , sample_date.month , 1) #might use later
+    #_ , num_days = calendar.monthrange (sample_date.year , sample_date.month)
+    #google_end_date = datetime.date (sample_date.year , sample_date.month , num_days)
+    return sample_date + datetime.timedelta(days=15)
 
 # Google Pay Calendar
 
