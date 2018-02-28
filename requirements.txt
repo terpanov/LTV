@@ -1,0 +1,10 @@
+Python 3.6+
+
+import pandas as pd
+https://pandas.pydata.org/
+
+import datetime
+https://docs.python.org/2/library/datetime.html
+
+import calendar
+https://docs.python.org/2/library/calendar.html
