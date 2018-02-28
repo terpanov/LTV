@@ -7,12 +7,18 @@ calendar outputs annual table with period start, end and pay dates"""
 import pandas as pd
 import datetime
 import calendar
+import os
 
 # Apple Pay Date
 
+file_path = os.path.abspath('apple_fiscal_calendar_2018_2021.csv')
+print(file_path)
+dir_path = os.path.dirname(file_path)
+print(dir_path)
+csv_path = os.path.join(dir_path, 'apple_fiscal_calendar_2018_2021.csv')
+
 def apple_paydate(date_entry):
-	apple_fiscal = pd.read_csv('/Users/plexchat/LTV_Geek/LTV_Files/LTV/apple_fiscal_calendar_2018_2021.csv',
-								parse_dates=True , index_col=None)
+	apple_fiscal = pd.read_csv(csv_path, parse_dates=True , index_col=None)
 	apple_fiscal['start_date'] = pd.to_datetime(apple_fiscal['start_date']) 	# convert date object to datatime
 	apple_start_date = apple_fiscal['start_date']								# assign to datatime
 	apple_fiscal['end_date'] = pd.to_datetime(apple_fiscal['end_date'])
@@ -30,8 +36,7 @@ print(apple_paydate('2018-10-10'))
 # Apple Calendar
 
 def apple_calendar(date_entry):
-	apple_fiscal = pd.read_csv('/Users/plexchat/LTV_Geek/LTV_Files/LTV/apple_fiscal_calendar_2018_2021.csv',
-							   parse_dates=True, index_col=None)
+	apple_fiscal = pd.read_csv(csv_path, parse_dates=True , index_col=None)
 	apple_fiscal['start_date'] = pd.to_datetime(apple_fiscal['start_date']) 	# convert date object to datatime
 	apple_starts = apple_fiscal['start_date']									# assign start dates to datatime
 	apple_fiscal['end_date'] = pd.to_datetime(apple_fiscal['end_date'])
