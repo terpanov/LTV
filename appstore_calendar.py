@@ -21,65 +21,66 @@ csv_path = os.path.join(dir_path, 'apple_fiscal_calendar_2018_2021.csv')
 
 # Apple Calendar
 
-def apple_calendar(date_entry):
+def apple_calendar(date_entry, revenue):
 	apple_fiscal = pd.read_csv(csv_path, parse_dates=True, index_col=None)
-	apple_fiscal['start_date'] = pd.to_datetime(apple_fiscal['start_date'])  # convert date object to datatime
-	apple_starts = apple_fiscal['start_date']  # assign start dates to datatime
+	apple_fiscal['date'] = pd.to_datetime(apple_fiscal['date'])  # convert date object to datetime
+	apple_date = apple_fiscal['date'].to_frame()
+	apple_fiscal['start_date'] = pd.to_datetime(apple_fiscal['start_date'])  # convert date object to datetime
+	apple_starts = apple_fiscal[['start_date', 'date']]  # assign start dates to datetime
 	apple_fiscal['end_date'] = pd.to_datetime(apple_fiscal['end_date'])
-	apple_ends = apple_fiscal['end_date']
+	apple_ends = apple_fiscal[['end_date', 'date']]
 	apple_fiscal['pay_date'] = pd.to_datetime(apple_fiscal['pay_date'])
 	apple_pays = apple_fiscal['pay_date']
-	apple_duration = apple_fiscal[['start_date', 'next_month_duration']]
 
-	apple_fiscal['payment_start'] = pd.to_datetime(apple_fiscal['payment_start'])
-	payment_start = apple_fiscal[['payment_start', 'start_date']]
-	apple_fiscal['payment_end'] = pd.to_datetime(apple_fiscal['payment_end'])
-	payment_end = apple_fiscal[['payment_end', 'start_date']]
+	apple_duration = apple_fiscal[['date', 'next_month_duration']]
+	#apple_fiscal['payment_start'] = pd.to_datetime(apple_fiscal['payment_start'])
+	#payment_start = apple_fiscal[['payment_start', 'date']]
+	#apple_fiscal['payment_end'] = pd.to_datetime(apple_fiscal['payment_end'])
+	#payment_end = apple_fiscal[['payment_end', 'date']]
+
 	year, month, day = map(int, date_entry.split('-'))  # set parse format
 	sample_date = datetime.date(year, month, day)  # parse date entry string
 	start_datelist = pd.date_range(sample_date, periods=365).tolist()  # create list of annual dates
-	start_apple_table = pd.DataFrame(start_datelist)  # convert list to dataframe
+	start_apple_table = pd.DataFrame(start_datelist)  # convert list to data frame
 	start_apple_table.index.name = 'days'  # name index 'days'
 	start_apple_table.columns = ['date']  # name dates column 'date'
-	start_apple_table['date'] = start_apple_table.loc[(start_apple_table['date'].isin(apple_starts)), 'start_date'] \
-		= start_apple_table['date']  # create start date column
-	start_apple_table['start_date'] = start_apple_table['start_date']
-	start_apple_table['date'] = start_apple_table.loc[(start_apple_table['date'].isin(apple_ends)), 'end_date'] \
-		= start_apple_table['date']  # create end date column
-	start_apple_table['end_date'] = start_apple_table['end_date']
+
+	start_apple_table = start_apple_table.merge(apple_starts, how='left', on='date', left_index=True)
+	start_apple_table = start_apple_table.merge(apple_ends, how='left', on='date', left_index=True)
+
+	#start_apple_table = start_apple_table.merge(payment_start, how='left', on='date', left_index=True)
+	#start_apple_table = start_apple_table.merge(payment_end, how='left', on='date', left_index=True)
+	start_apple_table = start_apple_table.merge(apple_duration, how='left', on='date', left_index=True)
+
 	start_apple_table['date'] = start_apple_table.loc[(start_apple_table['date'].isin(apple_pays)), 'pay_date'] \
-		= start_apple_table['date']  # create pay date column
+		= start_apple_table['date']
 
-	start_apple_table = start_apple_table.merge(payment_start, how='left', on='start_date', left_index=True)
-	start_apple_table = start_apple_table.merge(payment_end, how='left', on='start_date', left_index=True)
-	start_apple_table = start_apple_table.merge(apple_duration, how='left', on='start_date', left_index=True)
-
-	start_apple_table['payment_start'] = start_apple_table['payment_start'].fillna(method='ffill')
-	start_apple_table['payment_end'] = start_apple_table['payment_end'].fillna(method='ffill')
-
-	start_apple_table['start_date'] = start_apple_table['start_date'].fillna(method='ffill')
-	start_apple_table['end_date'] = start_apple_table['end_date'].fillna(method='bfill')
-
-	start_apple_table['sample_sales'] = list(range(1, 366))
+	start_apple_table['sample_sales'] = revenue
 	start_apple_table = start_apple_table.set_index('date')
 
-	start_apple_table['next_month_duration'] = pd.to_timedelta(start_apple_table['next_month_duration'], unit='D').fillna(method='ffill')
+	start_apple_table['next_month_duration'] = pd.to_timedelta(start_apple_table['next_month_duration'], unit='D')
 
-	start_apple_table['monthly_sales'] = start_apple_table.apply(lambda x: start_apple_table.loc[(start_apple_table['start_date']
-		 <= x.name) & (x.name <= start_apple_table['end_date']), ['sample_sales']].sum(), axis=1)
+	start_apple_table['monthly_sales'] = start_apple_table.apply(
+		lambda x: start_apple_table.loc[
+			(start_apple_table['start_date'] <= x.name) & (x.name <= start_apple_table['end_date']),
+			['sample_sales']].sum(), axis=1)
 
-	start_apple_table['monthly_adj'] = start_apple_table.apply(lambda x: start_apple_table.loc[(start_apple_table['start_date']
-		+ start_apple_table['next_month_duration'] <= x.name) & (x.name <= start_apple_table['end_date'] +
-		start_apple_table['next_month_duration']), ['sample_sales']].sum(), axis=1)
+	start_apple_table['monthly_adj'] = start_apple_table.apply(
+		lambda x: start_apple_table.loc[(start_apple_table['start_date']
+										 + start_apple_table['next_month_duration'] <= x.name) & (
+												x.name <= start_apple_table['end_date'] +
+												start_apple_table['next_month_duration']), ['sample_sales']].sum(),
+		axis=1)
 
-	start_apple_table['monthly_shift'] = start_apple_table['monthly_sales'].shift(7)
-	start_apple_table['monthly_adj'] = start_apple_table['monthly_shift'].loc[start_apple_table['pay_date'].notnull()]
+	start_apple_table['monthly_shift'] = start_apple_table['monthly_adj'].shift(7)
+
+	start_apple_table['monthly_payment'] = start_apple_table['monthly_shift'].loc[start_apple_table['pay_date'].notnull()]
 
 	return start_apple_table
 
 # Google Calendar
 
-def google_calendar(date_entry):
+def google_calendar(date_entry, revenue):
 	year, month, day = map(int, date_entry.split('-'))							# set parse format
 	sample_date = datetime.date(year, month, day)								# parse date entry string
 	start_datelist = pd.date_range(sample_date, periods=365).tolist()			# create list of annual dates
@@ -96,29 +97,33 @@ def google_calendar(date_entry):
 		start_google_table['date']
 	start_google_table.loc[(start_google_table['date'].dt.day == 15), 'pay_period'] = \
 		start_google_table['date'] - pd.DateOffset(months=1)								# create pay date column
-	start_google_table['sample_sales'] = list(range(1, 366))
+	start_google_table['sample_sales'] = revenue
 	start_google_table = start_google_table.set_index('date')
-	start_google_table['monthly_sales'] = \
+	start_google_table['monthly_payment'] = \
 		start_google_table.apply(lambda x: start_google_table.loc[(start_google_table['start_date'] +
 		pd.DateOffset(months=1) <= x.name)
 		& (x.name <= start_google_table['end_date'] + pd.DateOffset(months=1)), ['sample_sales']].sum(), axis=1)
-	start_google_table['monthly_sales'] = start_google_table['monthly_sales'].loc[start_google_table['pay_period'].notnull()]
+	start_google_table['monthly_payment'] = start_google_table['monthly_payment'].loc[start_google_table['pay_period'].notnull()]
 	return start_google_table
 
 
 # Check if calendars are workings
+revenue = list(range(1, 366))
 
-print(google_calendar('2017-11-01'))
-print(apple_calendar('2017-11-05'))
+print(apple_calendar('2017-11-05', revenue))
+print(google_calendar('2017-11-01', revenue))
+
+
+
 
 apple_sum = apple_calendar('2017-11-05')
 type(apple_sum)
-apple_sum['monthly_sales'].sum()
+apple_sum['monthly_payment'].sum()
 apple_sum.describe()
 
 google_sum = google_calendar('2017-11-01')
 type(google_sum)
-google_sum['monthly_sales'].sum()
+google_sum['monthly_payment'].sum()
 google_sum.describe()
 
 
@@ -154,15 +159,14 @@ print(google_paydate('2017-11-01'))
 
 # Output to Google Sheets to check
 
-apple_fiscal = apple_calendar('2017-11-05')
+apple_fiscal = apple_calendar('2017-11-01', revenue)
 fiscal_calendar = Spread('calculator', 'fiscal_calendar')
 fiscal_calendar.df_to_sheet(apple_fiscal, sheet='apple_output')
 print(fiscal_calendar)
 
-google_fiscal = google_calendar('2017-11-01')
+google_fiscal = google_calendar('2017-11-01', revenue)
 fiscal_calendar.df_to_sheet(google_fiscal, sheet='google_output')
 print(fiscal_calendar)
-
 
 
 
