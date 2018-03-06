@@ -19,9 +19,10 @@ dir_path = os.path.dirname(file_path)
 print(dir_path)
 csv_path = os.path.join(dir_path, 'apple_fiscal_calendar_2018_2021.csv')
 
-# Apple Calendar, uses date_entry - first date, revenue - list of daily sales
 
-def apple_calendar(date_entry, revenue):
+# Apple Calendar, uses start - first date, revenue - list of daily sales
+
+def apple_calendar(apple_start, apple_end):
 	apple_fiscal = pd.read_csv(csv_path, parse_dates=True, index_col=None)
 
 	# convert date, start and end date range, pay date and month duration to datetime
@@ -35,11 +36,17 @@ def apple_calendar(date_entry, revenue):
 	apple_duration = apple_fiscal[['date', 'next_month_duration']]
 
 	# set parse format / parse date entry string
-	year, month, day = map(int, date_entry.split('-'))
-	sample_date = datetime.date(year, month, day)
+	year, month, day = map(int, apple_start_date.split('-'))
+	apple_start = datetime.date(year, month, day)
+	year, month, day = map(int, apple_end_date.split('-'))
+	apple_end = datetime.date(year, month, day)
 
 	# create list of annual dates, based on the start date from date entry variable and convert list to data frame
-	start_datelist = pd.date_range(sample_date, periods=365).tolist()
+	apple_range = apple_end - apple_start
+	apple_range = apple_range.days + 1
+	apple_revenue = list(range(0, apple_range))
+
+	start_datelist = pd.date_range(apple_start, apple_end).tolist()
 	start_apple_table = pd.DataFrame(start_datelist)
 
 	# name index 'days' and column 'date'
@@ -52,11 +59,10 @@ def apple_calendar(date_entry, revenue):
 	start_apple_table = start_apple_table.merge(apple_duration, how='left', on='date', left_index=True)
 
 	# add 'pay_date' column to list only the days when receive payment from Apple
-	start_apple_table['date'] = start_apple_table.loc[(start_apple_table['date'].isin(apple_pays)), 'pay_date'] \
-		= start_apple_table['date']
+	start_apple_table['date'] = start_apple_table.loc[(start_apple_table['date'].isin(apple_pays)), 'pay_date'] = start_apple_table['date']
 
 	# assign 'sample_sales' column to second input revenue
-	start_apple_table['sample_sales'] = revenue
+	start_apple_table['sample_sales'] = apple_revenue
 
 	# change index to column 'date'
 	start_apple_table = start_apple_table.set_index('date')
@@ -84,15 +90,17 @@ def apple_calendar(date_entry, revenue):
 
 	return start_apple_table
 
-# Google Calendar, uses date_entry - first date, revenue - list of daily sales
+# Google Calendar, uses start - first date, revenue - list of daily sales
 
-def google_calendar(date_entry, revenue):
+def google_calendar(google_start, google_end):
 	# set parse format and parse date entry string
-	year, month, day = map(int, date_entry.split('-'))
-	sample_date = datetime.date(year, month, day)
+	year, month, day = map(int, google_start_date.split('-'))
+	google_start = datetime.date(year, month, day)
+	year, month, day = map(int, google_end_date.split('-'))
+	google_end = datetime.date(year, month, day)
 
 	# create list of annual dates and convert list to data frame
-	start_datelist = pd.date_range(sample_date, periods=365).tolist()
+	start_datelist = pd.date_range(google_start, google_end).tolist()
 	start_google_table = pd.DataFrame(start_datelist)
 
 	# name index 'days' and column 'date'
@@ -110,7 +118,10 @@ def google_calendar(date_entry, revenue):
 	start_google_table.loc[(start_google_table['date'].dt.day == 15), 'pay_period'] = start_google_table['date'] - pd.DateOffset(months=1)
 
 	# assign 'sample_sales' column to second input revenue
-	start_google_table['sample_sales'] = revenue
+	google_range = google_end - google_start
+	google_range = google_range.days + 1
+	google_revenue = list(range(0, google_range))
+	start_google_table['sample_sales'] = google_revenue
 
 	# change index to column 'date'
 	start_google_table = start_google_table.set_index('date')
@@ -122,36 +133,35 @@ def google_calendar(date_entry, revenue):
 	start_google_table['cumulative_payment'] = start_google_table['monthly_payment'].cumsum()
 	return start_google_table
 
+# add Apple and Google start and end dates to run calendars
 
-# add revenue variable and Apple and Google start dates to run calendars
-revenue = list(range(1, 366))
-apple_start_date = '2017-11-01'
-google_start_date = '2017-11-01'
+apple_start_date = '2017-12-01'
+apple_end_date = '2018-12-03'
+
+google_start_date = '2017-12-01'
+google_end_date = '2018-12-03'
+
 
 # simple check to see if calendars are workings
-print(apple_calendar(apple_start_date, revenue))
-print(google_calendar(google_start_date, revenue))
-
-# test calendars
-apple_sum = apple_calendar(apple_start_date, revenue)
-type(apple_sum)
-apple_sum['monthly_payment'].sum()
-apple_sum.describe()
-
-google_sum = google_calendar(google_start_date, revenue)
-type(google_sum)
-google_sum['monthly_payment'].sum()
-google_sum.describe()
+print(apple_calendar(apple_start_date, apple_end_date))
+print(google_calendar(google_start_date, google_end_date))
 
 # Output to Google Sheets, using gspread to check in more detail
-apple_fiscal = apple_calendar(apple_start_date, revenue)
+apple_fiscal = apple_calendar(apple_start_date, apple_end_date)
 fiscal_calendar = Spread('calculator', 'fiscal_calendar')
 fiscal_calendar.df_to_sheet(apple_fiscal, sheet='apple_output')
 print(fiscal_calendar)
 
-google_fiscal = google_calendar(google_start_date, revenue)
+google_fiscal = google_calendar(google_start_date, google_end_date)
 fiscal_calendar.df_to_sheet(google_fiscal, sheet='google_output')
 print(fiscal_calendar)
+
+
+
+
+
+
+
 
 
 
