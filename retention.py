@@ -5,8 +5,6 @@ from scipy import interpolate
 import pandas as pd
 import datetime
 import matplotlib.pyplot as plt
-import bokeh.plotting
-from bokeh.models.renderers import figure, output_file, show
 from gspread_pandas import Spread
 
 ret_day_1 = 0.6
@@ -67,8 +65,6 @@ arpdau_cohort = users_cohort.select_dtypes(exclude=['datetime']) * arpdau
 cumulative_retention = retention_cohort.sum()
 LTV = cumulative_retention[google_range] * arpdau
 
-retention_curve.iloc[0:1, 0:].T
-
 LTV_table = pd.DataFrame(cumulative_retention)
 LTV_table.columns = ['cum_retention']
 LTV_table['LTV'] = LTV_table['cum_retention'] * arpdau
@@ -78,11 +74,17 @@ LTV_table['cum_revenue'] = LTV_table['daily_revenue'].cumsum()
 LTV_table['retention_curve'] = retention_column
 LTV_table = LTV_table.set_index(retention_days['date'])
 
-LTV_table
-
 #retention plot
-plt.plot(LTV_table['retention_curve'], LTV_table['date'], 'o')
+
+plt.plot(xnew, retention_column, '-.')
 plt.ylabel('Retention')
+plt.xlabel('days since install')
+plt.show()
+
+#revenue plot
+
+plt.plot(xnew, LTV_table['cum_revenue'], '-.')
+plt.ylabel('Cumulative Revenue')
 plt.xlabel('days since install')
 plt.show()
 
