@@ -7,6 +7,7 @@ import datetime
 import matplotlib.pyplot as plt
 from gspread_pandas import Spread
 
+#inputs
 ret_day_1 = 0.6
 ret_day_3 = 0.5
 ret_day_7 = 0.4
@@ -23,6 +24,8 @@ arpdau = 0.10
 google_start_date = '2017-12-10'
 google_end_date = '2018-12-03'
 
+#function
+
 year, month, day = map(int, google_start_date.split('-'))
 google_start = datetime.date(year, month, day)
 year, month, day = map(int, google_end_date.split('-'))
@@ -36,12 +39,6 @@ ydata = np.array([ret_day_1, ret_day_3, ret_day_7, ret_day_14, ret_day_30, ret_d
 
 f = interpolate.interp1d(xdata, ydata)
 xnew = np.linspace(xdata[0], xdata[-1], google_range)
-
-#plt.plot(xdata, ydata, 'o')
-#plt.ylabel('Retention')
-#plt.xlabel('days since install')
-#plt.plot(xnew, f(xnew))
-#plt.show()
 
 retention_column = pd.DataFrame(f(xnew), index=range(1, google_range + 1))
 retention_curve = retention_column.T
@@ -68,8 +65,9 @@ LTV = cumulative_retention[google_range] * arpdau
 LTV_table = pd.DataFrame(cumulative_retention)
 LTV_table.columns = ['cum_retention']
 LTV_table['LTV'] = LTV_table['cum_retention'] * arpdau
-LTV_table['total_users'] = users_cohort.sum()
-LTV_table['daily_revenue'] = LTV_table['total_users'] * arpdau
+LTV_table['daily_users'] = users_cohort.sum()
+LTV_table['total_users'] = LTV_table['daily_users'].cumsum()
+LTV_table['daily_revenue'] = LTV_table['daily_users'] * arpdau
 LTV_table['cum_revenue'] = LTV_table['daily_revenue'].cumsum()
 LTV_table['retention_curve'] = retention_column
 LTV_table = LTV_table.set_index(retention_days['date'])
@@ -81,12 +79,20 @@ plt.ylabel('Retention')
 plt.xlabel('days since install')
 plt.show()
 
+#users plot
+
+plt.plot(xnew, LTV_table['daily_users'], '-.')
+plt.ylabel('Cumulative Revenue')
+plt.xlabel('days since install')
+plt.show()
+
 #revenue plot
 
 plt.plot(xnew, LTV_table['cum_revenue'], '-.')
 plt.ylabel('Cumulative Revenue')
 plt.xlabel('days since install')
 plt.show()
+
 
 #output to Google Sheets
 fiscal_calendar = Spread('calculator', 'fiscal_calendar')
