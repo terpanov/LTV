@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 from gspread_pandas import Spread
 
 #inputs
+ret_day_0 = 1.0
 ret_day_1 = 0.6
 ret_day_3 = 0.5
 ret_day_7 = 0.4
@@ -34,8 +35,8 @@ google_end = datetime.date(year, month, day)
 google_range = google_end - google_start
 google_range = google_range.days + 1
 
-xdata = np.array([1, 3, 7, 14, 30, 60, 90, 180, 365])
-ydata = np.array([ret_day_1, ret_day_3, ret_day_7, ret_day_14, ret_day_30, ret_day_60, ret_day_90, ret_day_180, ret_day_365])
+xdata = np.array([0, 1, 3, 7, 14, 30, 60, 90, 180, 365])
+ydata = np.array([ret_day_0, ret_day_1, ret_day_3, ret_day_7, ret_day_14, ret_day_30, ret_day_60, ret_day_90, ret_day_180, ret_day_365])
 
 f = interpolate.interp1d(xdata, ydata)
 xnew = np.linspace(xdata[0], xdata[-1], google_range)
@@ -71,6 +72,7 @@ LTV_table['daily_revenue'] = LTV_table['daily_users'] * arpdau
 LTV_table['cum_revenue'] = LTV_table['daily_revenue'].cumsum()
 LTV_table['retention_curve'] = retention_column
 LTV_table = LTV_table.set_index(retention_days['date'])
+LTV_table
 
 #retention plot
 
