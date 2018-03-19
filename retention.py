@@ -9,7 +9,6 @@ from gspread_pandas import Spread
 
 #inputs
 
-ret_day_0 = 1.0
 ret_day_1 = 0.6
 ret_day_3 = 0.5
 ret_day_7 = 0.4
@@ -28,7 +27,7 @@ google_end_date = '2018-12-03'
 
 #function
 
-def ltv_simple(ret_day_0, ret_day_1, ret_day_3, ret_day_7, ret_day_14, ret_day_30, ret_day_60, ret_day_90, ret_day_180, ret_day_365,
+def ltv_simple(ret_day_1, ret_day_3, ret_day_7, ret_day_14, ret_day_30, ret_day_60, ret_day_90, ret_day_180, ret_day_365,
 			   daily_organic_users, google_start_date, google_end_date):
 
 	#reformat string dates to datetime
@@ -43,7 +42,7 @@ def ltv_simple(ret_day_0, ret_day_1, ret_day_3, ret_day_7, ret_day_14, ret_day_3
 
 	#create arrays to get retention curve based on the user inputs
 	xdata = np.array([0, 1, 3, 7, 14, 30, 60, 90, 180, 365])
-	ydata = np.array([ret_day_0, ret_day_1, ret_day_3, ret_day_7, ret_day_14, ret_day_30, ret_day_60, ret_day_90, ret_day_180, ret_day_365])
+	ydata = np.array([1, ret_day_1, ret_day_3, ret_day_7, ret_day_14, ret_day_30, ret_day_60, ret_day_90, ret_day_180, ret_day_365])
 
 	#create retention curve
 	f = interpolate.interp1d(xdata, ydata)
@@ -73,7 +72,7 @@ def ltv_simple(ret_day_0, ret_day_1, ret_day_3, ret_day_7, ret_day_14, ret_day_3
 	users_cohort = retention_cohort.select_dtypes(exclude=['datetime']) * daily_organic_users
 	arpdau_cohort = users_cohort.select_dtypes(exclude=['datetime']) * arpdau
 	cumulative_retention = retention_cohort.sum()
-	#LTV = cumulative_retention[google_range] * arpdau not used at the moment
+	#LTV = cumulative_retention[google_range] * arpdau / not used at the moment
 
 	LTV_table = pd.DataFrame(cumulative_retention)
 	LTV_table.columns = ['cum_retention']
@@ -109,7 +108,7 @@ def ltv_simple(ret_day_0, ret_day_1, ret_day_3, ret_day_7, ret_day_14, ret_day_3
 	return LTV_table, retention_plot, users_plot, revenue_plot
 
 #check
-ltv_simple(ret_day_0, ret_day_1, ret_day_3, ret_day_7, ret_day_14, ret_day_30, ret_day_60, ret_day_90,
+ltv_simple(ret_day_1, ret_day_3, ret_day_7, ret_day_14, ret_day_30, ret_day_60, ret_day_90,
 				  ret_day_180, ret_day_365, daily_organic_users, google_start_date, google_end_date)
 
 
